@@ -22,7 +22,7 @@ class TMDB {
 function movie_info($tmdbid)
     {
         $url ="http://api.themoviedb.org/$this->api_version/Movie.getInfo/$this->lang/xml/$this->tmdbapikey/".$tmdbid;
-        echo $url;
+        //echo $url;
 		if ($this->outputurl == 'true') { echo $url; }
         if ($this->usecache == 'true')
             {
@@ -242,11 +242,12 @@ function _tmdb_movie_xml2array($xml)
                         if ($inc == true) { $i++; } // only increment if theres actually data
                     }
                   foreach ($output['images'] as $item):
-			$image[$item['type']][$item['size']][]=$item['url'];
+			$imagess[$item['type']][$item['size']][]=$item['url'];
 		endforeach;
 		unset($output['images']);
-		$output['images'] = $image;      
+		$output['images'] = $imagess;      
             } 
+        unset($output['categories']);
         return($output);
     }
 
