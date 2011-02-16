@@ -22,6 +22,7 @@ class TMDB {
 function movie_info($tmdbid)
     {
         $url ="http://api.themoviedb.org/$this->api_version/Movie.getInfo/$this->lang/xml/$this->tmdbapikey/".$tmdbid;
+        echo $url;
 		if ($this->outputurl == 'true') { echo $url; }
         if ($this->usecache == 'true')
             {
@@ -42,6 +43,8 @@ function movie_info($tmdbid)
             }
         $movie = $tmdbmovie['OpenSearchDescription']['movies']['movie'];
         $output = $this->_tmdb_movie_xml2array($movie);
+
+
 
         return($output); 
     }
@@ -80,6 +83,7 @@ function actor_search($search)
         $search = strtolower(str_replace(' ','+',$search));
         $search = str_replace('%20','+',$search);
         $url = "http://api.themoviedb.org/$this->api_version/Person.search/$this->lang/xml/$this->tmdbapikey/".$search;   
+        //echo $url;
 		if ($this->outputurl == 'true') { echo $url; }
         if ($this->usecache == 'true')
             {
@@ -104,6 +108,7 @@ function actor_search($search)
        
        //print_r($tmdbsearch);
         $searched = $tmdbsearch['OpenSearchDescription']['people']['person'];
+        //print_r($searched);
         if ($searched == 'Nothing found.')
             {
                 $output = 'Nothing found.';
@@ -165,7 +170,7 @@ function movie_search($search)
     }
 function _tmdb_movie_xml2array($xml)
     {
-        $attrs = array('name','popularity','type','id','imdb_id','url','overview','rating','released','runtime','budget','revenue','homepage','trailer',);
+        $attrs = array('name','popularity','type','id','imdb_id','url','overview','votes','rating','tagline','certification','released','runtime','budget','revenue','homepage','trailer','categories');
         foreach($attrs as $attr)
             {
                 if (isset($xml[$attr]))
@@ -190,8 +195,33 @@ function _tmdb_movie_xml2array($xml)
                                 }                         
                         }
                         if ($inc == true) { $i++; } // only increment if theres actually data
-                    }           
+                    }  
+			foreach($output['cast'] as $item):
+                   $cast2[$item['job']][] =array ( 
+                                    'name' => $item['name'],
+                                    'character' => $item['character'],
+                                    'thumb' => $item['thumb'],
+                                    'url' => $item['url'],
+                                    'id' => $item['id']
+                                   );
+            endforeach;
+            $output['cast'] = $cast2;
             }
+        //Genre's / Categories
+        $attrs = array('type','name','url','id');
+        if(isset($xml['categories']['category']) && is_array($xml['categories']['category'])):
+			$i=0;
+			foreach ($xml['categories']['category'] as $cat):
+				$inc = false;
+				foreach ($attrs as $attr):
+					if(isset($cat[$attr])):
+						$output['genres'][$i][$attr] = $cat[$attr];
+						$inc = true;
+					endif;
+				endforeach;
+				if ($inc == true) { $i++; } // only increment if theres actually data
+        	endforeach;
+        endif;  
         //Posters
         $attrs = array('type','size','url','id');
         if(isset($xml['images']['image']) && is_array($xml['images']['image']))
@@ -211,7 +241,11 @@ function _tmdb_movie_xml2array($xml)
                         }
                         if ($inc == true) { $i++; } // only increment if theres actually data
                     }
-                
+                  foreach ($output['images'] as $item):
+			$image[$item['type']][$item['size']][]=$item['url'];
+		endforeach;
+		unset($output['images']);
+		$output['images'] = $image;      
             } 
         return($output);
     }
@@ -440,4 +474,3 @@ function _cache($file,$ttl)
  
 }
 ?>
-
